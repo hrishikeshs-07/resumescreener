@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Resume Analyzer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.4.2/mammoth.browser.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            font-size: 16px;
+        }
+
+        .container {
+            max-width: 900px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 40px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            animation: fadeIn 1s ease-in-out;
+            position: relative;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .logo {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            width: 50px;
+            height: auto;
+        }
+
+        h1 {
+            font-size: 36px;
+            margin-bottom: 20px;
+            font-weight: 700;
+            color: #fff;
+            letter-spacing: -0.5px;
+        }
+
+        textarea {
+            width: 100%;
+            height: 120px;
+            padding: 15px;
+            border-radius: 8px;
+            border: none;
+            margin-bottom: 20px;
+            background-color: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            font-size: 16px;
+            transition: 0.3s;
+            resize: none;
+        }
+
+        textarea::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        textarea:focus {
+            background-color: rgba(255, 255, 255, 0.3);
+            outline: none;
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .upload-section {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        label,
+        button {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.9);
+            color: #1e3c72;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: 0.3s;
+            font-size: 16px;
+            border: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        label:hover,
+        button:hover {
+            background: rgba(255, 255, 255, 1);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        button {
+            background: #257136;
+            color: #fff;
+            margin-top: 0;
+        }
+
+        button:hover {
+            background: #1e5a2d;
+        }
+
+        table {
+            width: 100%;
+            margin-top: 30px;
+            border-collapse: collapse;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            overflow: hidden;
+            color: #fff;
+            animation: slideIn 0.5s ease-in-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        th,
+        td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        th {
+            background: rgba(255, 255, 255, 0.2);
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        td {
+            font-size: 14px;
+            font-weight: 400;
+        }
+
+        tr:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            cursor: pointer;
+        }
+
+        /* AI Assistant Chatbot Styles */
+        .chatbot {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 300px;
+            background: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            display: none;
+            z-index: 1000;
+        }
+
+        .chatbot-header {
+            background: #257136;
+            color: #fff;
+            padding: 10px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 16px;
+        }
+
+        .chatbot-body {
+            padding: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .chatbot-input {
+            display: flex;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.9);
+        }
+
+        .chatbot-input input {
+            flex: 1;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            outline: none;
+        }
+
+        .chatbot-input button {
+            background: #257136;
+            color: #fff;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            margin-left: 10px;
+            cursor: pointer;
+        }
+
+        .chatbot-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #257136;
+            color: #fff;
+            padding: 10px 15px;
+            border-radius: 50%;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .message {
+            margin-bottom: 10px;
+            padding: 8px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            color: #333;
+        }
+
+        .message.user {
+            background: rgba(255, 255, 255, 0.9);
+            text-align: right;
+        }
+
+        .message.bot {
+            background: rgba(255, 255, 255, 0.2);
+            text-align: left;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 25px;
+            }
+
+            h1 {
+                font-size: 28px;
+            }
+
+            textarea {
+                font-size: 14px;
+            }
+
+            .upload-section {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            label,
+            button {
+                width: 100%;
+                font-size: 14px;
+                padding: 10px 20px;
+            }
+
+            .logo {
+                width: 40px;
+                top: 15px;
+                right: 15px;
+            }
+
+            .chatbot {
+                width: 90%;
+                right: 5%;
+                bottom: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <img src="Screenshot 2025-01-31 at 11.16.38 AM.png" alt="Logo" class="logo">
+        <h1>AI Resume Analyzer</h1>
+        <textarea id="jobDescription" placeholder="Paste Job Description here..."></textarea>
+        <div class="upload-section">
+            <input type="file" id="cvUpload" accept=".docx" multiple>
+            <label for="cvUpload">Choose CV Files</label>
+            <button id="uploadBtn">Analyze & Rank</button>
+        </div>
+
+        <table id="resultTable">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Score</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- AI Assistant Chatbot -->
+    <div class="chatbot-toggle" onclick="toggleChatbot()">💬</div>
+    <div class="chatbot">
+        <div class="chatbot-header">AI Assistant</div>
+        <div class="chatbot-body" id="chatbot-body">
+            <div class="message bot">Hello! How can I assist you today?</div>
+        </div>
+        <div class="chatbot-input">
+            <input type="text" id="chatbot-input" placeholder="Type your message...">
+            <button onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        // Resume Analyzer Logic
+        document.getElementById('uploadBtn').addEventListener('click', function() {
+            const fileInput = document.getElementById('cvUpload');
+            const files = fileInput.files;
+            const jobDescription = document.getElementById("jobDescription").value.trim();
+
+            if (files.length === 0 || jobDescription === "") {
+                alert('Upload CVs & enter job description.');
+                return;
+            }
+
+            const tbody = document.querySelector('#resultTable tbody');
+            tbody.innerHTML = '';
+
+            let results = [];
+
+            Array.from(files).forEach(file => {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const arrayBuffer = event.target.result;
+
+                    mammoth.extractRawText({ arrayBuffer: arrayBuffer })
+                        .then(function(result) {
+                            const text = result.value;
+                            const extractedData = analyzeCV(text);
+                            extractedData.score = calculateMatchScore(text, jobDescription);
+                            results.push(extractedData);
+                            
+                            // Sort results by score in descending order
+                            results.sort((a, b) => b.score - a.score);
+                            displayResults(results);
+                        })
+                        .catch(function(err) {
+                            console.error(err);
+                            alert('Error reading document: ' + file.name);
+                        });
+                };
+
+                reader.readAsArrayBuffer(file);
+            });
+        });
+
+        function analyzeCV(text) {
+            const name = text.match(/Name:\s*(.*)/i)?.[1]?.trim() || 'Not found';
+            const email = text.match(/Email:\s*(.*)/i)?.[1]?.trim() || 'Not found';
+            return { name, email };
+        }
+
+        function calculateMatchScore(resumeText, jobDescription) {
+            const resumeWords = resumeText.toLowerCase().split(/\s+/);
+            const jobWords = jobDescription.toLowerCase().split(/\s+/);
+            const commonWords = jobWords.filter(word => resumeWords.includes(word));
+            return Math.min((commonWords.length / jobWords.length) * 100, 100).toFixed(2);
+        }
+
+        function displayResults(results) {
+            const tbody = document.querySelector('#resultTable tbody');
+            tbody.innerHTML = '';
+            results.forEach(data => {
+                const row = document.createElement('tr');
+                row.innerHTML = `<td>${data.name}</td><td>${data.email}</td><td>${data.score}%</td>`;
+                tbody.appendChild(row);
+            });
+        }
+
+        // AI Assistant Logic
+        function toggleChatbot() {
+            const chatbot = document.querySelector('.chatbot');
+            chatbot.style.display = chatbot.style.display === 'block' ? 'none' : 'block';
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chatbot-input');
+            const message = input.value.trim();
+            if (message === "") return;
+
+            const chatbotBody = document.getElementById('chatbot-body');
+            chatbotBody.innerHTML += `<div class="message user">${message}</div>`;
+
+            // Simulate bot response
+            setTimeout(() => {
+                chatbotBody.innerHTML += `<div class="message bot">I'm here to help! Ask me anything about the resume analysis process.</div>`;
+                chatbotBody.scrollTop = chatbotBody.scrollHeight;
+            }, 500);
+
+            input.value = '';
+        }
+    </script>
+</body>
+</html>
